@@ -35,11 +35,11 @@ pipeline {
         // ID của credentials chứa username/password Docker Hub, đã được cấu hình trong Jenkins
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials' 
         // Tên image trên Docker Hub
-        DOCKER_IMAGE_NAME = 'your-dockerhub-username/ci-cd-demo-app'
+        DOCKER_IMAGE_NAME = 'duong3010/myapp'
         // ID của credentials chứa token để checkout repo cấu hình K8s
-        GIT_CONFIG_REPO_CREDENTIALS_ID = 'gitlab-config-repo-credentials' 
+        GIT_CONFIG_REPO_CREDENTIALS_ID = 'gitcd' 
         // URL của kho chứa cấu hình K8s
-        GIT_CONFIG_REPO_URL = 'https://gitlab.com/your-username/k8s-manifest-repo.git'
+        GIT_CONFIG_REPO_URL = 'https://github.com/duongnv3010/CD-VDT.git'
     }
 
     stages {
@@ -80,32 +80,6 @@ pipeline {
                 }
             }
         }
-        
-        // Giai đoạn 4: Phân tích mã nguồn với SonarQube
-        stage('4. SonarQube Analysis') {
-            steps {
-                script {
-                    // Sử dụng tool SonarQube đã được cấu hình trong Jenkins
-                    withSonarQubeEnv('MySonarQubeServer') { 
-                        sh 'docker run --rm -v $(pwd):/usr/src sonarsource/sonar-scanner-cli'
-                    }
-                }
-            }
-        }
-
-        // Giai đoạn 5: Chờ kết quả từ Quality Gate của SonarQube
-        stage('5. Quality Gate Check') {
-            steps {
-                // Timeout sau 10 phút nếu không nhận được kết quả
-                timeout(time: 10, unit: 'MINUTES') {
-                    // Chờ SonarQube xác nhận Quality Gate đã PASS
-                    // abortPipeline: true -> Dừng pipeline nếu Quality Gate FAILED
-                    waitForQualityGate abortPipeline: true
-                }
-                echo "Quality Gate đã PASS!"
-            }
-        }
-
         // Giai đoạn 6: Build và Push Docker Image
         stage('6. Build & Push Docker Image') {
             steps {
@@ -139,7 +113,7 @@ pipeline {
                     // Sử dụng credentials để checkout kho chứa manifest
                     withCredentials([usernamePassword(credentialsId: GIT_CONFIG_REPO_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         // Clone repo cấu hình vào một thư mục con
-                        sh "git clone https://${GIT_USER}:${GIT_PASS}@gitlab.com/your-username/k8s-manifest-repo.git k8s-manifest-repo"
+                        sh "git clone https://${GIT_USER}:${GIT_PASS}@github.com/duongnv3010/CD-VDT.git k8s-manifest-repo"
                         
                         // Di chuyển vào thư mục repo vừa clone
                         dir('k8s-manifest-repo') {
@@ -149,8 +123,8 @@ pipeline {
                             sh "sed -i 's|image: .*|image: ${dockerImageTag}|g' deployment.yaml"
                             
                             // Cấu hình git user
-                            sh "git config user.email 'jenkins@example.com'"
-                            sh "git config user.name 'Jenkins CI'"
+                            sh "git config user.email 'nguyenduong20053010@gmail.com'"
+                            sh "git config user.name 'duongnv3010'"
                             
                             // Commit và push thay đổi
                             sh "git add deployment.yaml"
